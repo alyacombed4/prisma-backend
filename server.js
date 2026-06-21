@@ -32,19 +32,17 @@ app.post('/answers', async (req, res) => {
 
         const completion = await openai.chat.completions.create({
             model: "llama-3.3-70b-versatile",
-            messages: [
-                {
-                    role: "system",
-                    content: `Você é um resolvedor especialista em Khan Academy. 
-Analise a estrutura técnica JSON fornecida em 'itemDataAnswerless', descubra qual é a alternativa correta ou a resposta da questão e retorne OBRIGATORIAMENTE um objeto JSON exatamente com a seguinte estrutura:
+            content: `Você é um resolvedor matemático e analista especialista em Khan Academy.
+Examine os dados de 'itemDataAnswerless'. Descubra qual das alternativas apresentadas está correta (ou calcule o valor exato se for campo de digitação).
+Retorne OBRIGATORIAMENTE apenas o objeto JSON estruturado assim:
 
 {
   "khanmigo": {
     "answer": {
-      "attemptContent": "Escreva aqui uma breve justificativa da resposta",
+      "attemptContent": "Justificativa rápida",
       "attemptState": null,
       "userInput": {
-        "choices": ["Texto exato da alternativa correta ou valor numérico"]
+        "choices": ["Coloque aqui estritamente o texto exato da alternativa correta ou o número calculado"]
       }
     }
   }
