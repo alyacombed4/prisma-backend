@@ -33,18 +33,28 @@ app.post('/answers', async (req, res) => {
         const completion = await openai.chat.completions.create({
             model: "llama-3.3-70b-versatile", // Seu novo modelo configurado aqui
             messages: [
-                {
-                    role: "system",
-                    content: "Você é um assistente focado em análise de dados e formatação estrita em JSON."
-                },
-                {
-                    role: "user",
-                    content: `Analise os dados fornecidos e retorne obrigatoriamente apenas o objeto JSON no formato estruturado: ${itemDataAnswerless}`
-                }
-            ],
-            temperature: 0.1,
-            response_format: { type: "json_object" }
-        });
+    {
+        role: "system",
+        content: `Você é um resolvedor especialista em Khan Academy. 
+Analise a estrutura técnica JSON fornecida em 'itemDataAnswerless', descubra qual é a alternativa correta ou a resposta da questão e retorne OBRIGATORIAMENTE um objeto JSON exatamente com a seguinte estrutura:
+
+{
+  "khanmigo": {
+    "answer": {
+      "attemptContent": "Escreva aqui uma breve justificativa da resposta",
+      "attemptState": null,
+      "userInput": {
+        "choices": ["Texto exato da alternativa correta ou valor numérico"]
+      }
+    }
+  }
+}`
+    },
+    {
+        role: "user",
+        content: `Aqui estão os dados estruturais da questão para você analisar e resolver: ${itemDataAnswerless}`
+    }
+],
 
         const responseText = completion.choices[0].message.content.trim();
         const responseData = JSON.parse(responseText);
