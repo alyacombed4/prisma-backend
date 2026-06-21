@@ -29,13 +29,13 @@ app.post('/answers', async (req, res) => {
         });
 
         console.log("Enviando requisição para o modelo llama-3.3-70b-versatile...");
-        
+
         const completion = await openai.chat.completions.create({
-            model: "llama-3.3-70b-versatile", // Seu novo modelo configurado aqui
+            model: "llama-3.3-70b-versatile",
             messages: [
-    {
-        role: "system",
-        content: `Você é um resolvedor especialista em Khan Academy. 
+                {
+                    role: "system",
+                    content: `Você é um resolvedor especialista em Khan Academy. 
 Analise a estrutura técnica JSON fornecida em 'itemDataAnswerless', descubra qual é a alternativa correta ou a resposta da questão e retorne OBRIGATORIAMENTE um objeto JSON exatamente com a seguinte estrutura:
 
 {
@@ -49,12 +49,15 @@ Analise a estrutura técnica JSON fornecida em 'itemDataAnswerless', descubra qu
     }
   }
 }`
-    },
-    {
-        role: "user",
-        content: `Aqui estão os dados estruturais da questão para você analisar e resolver: ${itemDataAnswerless}`
-    }
-],
+                },
+                {
+                    role: "user",
+                    content: `Aqui estão os dados estruturais da questão para você analisar e resolver: ${itemDataAnswerless}`
+                }
+            ],
+            temperature: 0.1,
+            response_format: { type: "json_object" }
+        });
 
         const responseText = completion.choices[0].message.content.trim();
         const responseData = JSON.parse(responseText);
@@ -63,7 +66,6 @@ Analise a estrutura técnica JSON fornecida em 'itemDataAnswerless', descubra qu
         res.json(responseData);
 
     } catch (error) {
-        // Se a chamada à Groq falhar (chave inválida, falta de saldo, etc), cai aqui
         console.error("Erro no processamento do backend:", error.message);
         res.status(500).json({ error: "Erro interno ao processar requisição com a IA." });
     }
