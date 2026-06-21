@@ -30,23 +30,15 @@ app.post('/answers', async (req, res) => {
 
         console.log("Enviando requisição para o modelo llama-3.3-70b-versatile...");
 
+        // Prompt do sistema isolado para evitar quebras de sintaxe no objeto local
+        const systemPrompt = "Você é um resolvedor especialista em Khan Academy. Analise a estrutura técnica JSON fornecida em 'itemDataAnswerless', descubra qual é a alternativa correta ou a resposta da questão e retorne OBRIGATORIAMENTE um objeto JSON exatamente com a seguinte estrutura: {\"khanmigo\": {\"answer\": {\"attemptContent\": \"Escreva aqui uma breve justificativa\", \"attemptState\": null, \"userInput\": {\"choices\": [\"Texto exato da alternativa correta ou valor numérico\"]}}}}";
+
         const completion = await openai.chat.completions.create({
             model: "llama-3.3-70b-versatile",
-            content: `Você é um resolvedor matemático e analista especialista em Khan Academy.
-Examine os dados de 'itemDataAnswerless'. Descubra qual das alternativas apresentadas está correta (ou calcule o valor exato se for campo de digitação).
-Retorne OBRIGATORIAMENTE apenas o objeto JSON estruturado assim:
-
-{
-  "khanmigo": {
-    "answer": {
-      "attemptContent": "Justificativa rápida",
-      "attemptState": null,
-      "userInput": {
-        "choices": ["Coloque aqui estritamente o texto exato da alternativa correta ou o número calculado"]
-      }
-    }
-  }
-}`
+            messages: [
+                {
+                    role: "system",
+                    content: systemPrompt
                 },
                 {
                     role: "user",
