@@ -63,6 +63,12 @@ app.post('/answers', async (req, res) => {
                 response_format: { type: "json_object" }
             });
         }
+        const resposta = await fetch('https://prisma-backend-answers.onrender.com/answers', { /* ... */ });
+
+        if (!resposta.ok) {
+     console.error("Erro no servidor HTTP:", resposta.status);
+     return;
+}
 
         // Processa o resultado da API que funcionou
         const responseText = completion.choices[0].message.content.trim();
