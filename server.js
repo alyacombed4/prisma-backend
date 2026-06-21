@@ -19,7 +19,7 @@ app.post('/answers', async (req, res) => {
         
         // --- TENTATIVA 1: API Principal ---
         try {
-            const apiKey1 = process.env.GROQ_API_KEY; // Sua chave principal
+            const apiKey1 = process.env.GROQ_API_KEY2; // Sua chave principal
             if (!apiKey1) throw new Error("Chave 1 não configurada");
 
             const openai = new OpenAI({
@@ -29,7 +29,7 @@ app.post('/answers', async (req, res) => {
 
             console.log("Tentando API 1...");
             completion = await openai.chat.completions.create({
-                model: "llama3-8b-8192", // Modelo atualizado e ativo
+                model: "llama-3.1-8b-instant", // Modelo atualizado e ativo
                 messages: [
                     { role: "system", content: "Você é um assistente focado em formatação JSON." },
                     { role: "user", content: `Retorne um JSON baseado em: ${itemDataAnswerless}` }
@@ -42,7 +42,7 @@ app.post('/answers', async (req, res) => {
             console.warn("API 1 falhou ou o modelo foi descontinuado. Erro:", errorApi1.message);
             
             // --- TENTATIVA 2: API de Backup (Fallback) ---
-            const apiKey2 = process.env.GROQ_API_KEY2; // Sua chave secundária
+            const apiKey2 = process.env.GROQ_API_KEY; // Sua chave secundária
             if (!apiKey2) {
                 return res.status(500).json({ error: "API 1 falhou e a API 2 não está configurada." });
             }
