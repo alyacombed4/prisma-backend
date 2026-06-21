@@ -1,74 +1,74 @@
 const express = require('express');
-    const cors = require('cors');
-    const OpenAI = require('openai');
-    require('dotenv').config();
+const cors = require('cors');
+const OpenAI = require('openai');
+require('dotenv').config();
 
-    const app = express();
-    app.use(cors());
-    app.use(express.json());
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    // Inicializa a API da Groq utilizando a sua chave e biblioteca OpenAI
-    const api2Key = process.env.GROQ_API_KEY2 || process.env.GROQ_API_KEY;
-    const openai = new OpenAI({
-        baseURL: "https://api.groq.com/openai/v1",
-        apiKey: api2Key,
-    });
+app.post('/answers', async (req, res) => {
+    try {
+        const { id, sha, itemDataAnswerless } = req.body;
 
-    // Modelo Llama da Groq (ex: llama3-70b-8192 ou o modelo que você preferir usar da Llama 3)
-    const LLAMA_MODEL = "llama3-70b-8192";
-
-    app.post('/answers', async (req, res) => {
-        try {
-            const { id, sha, itemDataAnswerless } = req.body;
-
-            if (!itemDataAnswerless) {
-                return res.status(400).json({ error: "Dados da questão ausentes." });
-            }
-
-            // Criando a chamada de chat para a Llama resolver a questão
-            const completion = await openai.chat.completions.create({
-                model: LLAMA_MODEL,
-                messages: [
-                    {
-                        role: "system",
-                        content: "Você é um assistente especializado em resolver e preencher respostas do Khan Academy no formato JSON estruturado."
-                    },
-                    {
-                        role: "user",
-                        content: `
-                        Analise os dados deste Perseus Widget (questão do Khan Academy sem resposta):
-                        ${itemDataAnswerless}
-
-                        Resolva a questão corretamente.
-                        Retorne obrigatoriamente apenas o objeto JSON abaixo, sem formatações em markdown ou
-  explicações de texto adicionais:
-                        {
-                          "khanmigo": {
-                            "answer": {
-                              "attemptContent": "string_da_resposta_correta",
-                              "attemptState": {},
-                              "userInput": {}
-                            }
-                          }
-                        }
-                        `
-                    }
-                ],
-                temperature: 0.1, // Temperatura baixa para respostas mais exatas
-                response_format: { type: "json_object" } // Garante que o retorno seja um JSON válido
-            });
-
-            const responseText = completion.choices[0].message.content.trim();
-            const responseData = JSON.parse(responseText);
-
-            res.json(responseData);
-        } catch (error) {
-            console.error("Erro no servidor Prisma:", error);
-            res.status(500).json({ error: "Erro interno ao processar resposta da IA." });
+        if (!itemDataAnswerless) {
+            return res.status(400).json({ error: "Dados da questão ausentes." });
         }
-    });
 
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`Servidor Prisma rodando na porta ${PORT} conectado à Groq (Llama)`);
-    });
+        // Obtém a chave ou usa uma string temporária para não quebrar o servidor ao iniciar no Render
+        const apiKey = process.env.GROQ_API_KEY2 || process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            console.error("ERRO: GROQ_API_KEY2 não configurada nas variáveis de ambiente.");
+            return res.status(500).json({ error: "Chave de API não configurada no servidor." });
+        }
+
+        // Inicializa o cliente apenas na hora da requisição
+        const openai = new OpenAI({
+            baseURL: "https://api.groq.com/openai/v1",
+            apiKey: apiKey,
+        });
+
+        const completion = await openai.chat.completions.create({
+            model: "llama3-70b-8192",
+            messages: [
+                {
+                    role: "system",
+                    content: "Você é um resolvedor automático do Khan Academy. Responda apenas com o JSON solicitado."
+                },
+                {
+                    role: "user",
+                    content: `
+                    Analise os dados deste Perseus Widget (questão do Khan Academy sem resposta):
+                    ${itemDataAnswerless}
+
+                    Resolva a questão e retorne obrigatoriamente apenas o objeto JSON no formato:
+                    {
+                      "khanmigo": {
+                        "answer": {
+                          "attemptContent": "string_da_resposta_correta",
+                          "attemptState": {}, 
+                          "userInput": {}
+                        }
+                      }
+                    }
+                    `
+                }
+            ],
+            temperature: 0.1,
+            response_format: { type: "json_object" }
+        });
+
+        const responseText = completion.choices[0].message.content.trim();
+        const responseData = JSON.parse(responseText);
+
+        res.json(responseData);
+    } catch (error) {
+        console.error("Erro no processamento:", error);
+        res.status(500).json({ error: "Erro ao processar resposta com a IA." });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor rodando com sucesso na porta ${PORT}`);
+});
