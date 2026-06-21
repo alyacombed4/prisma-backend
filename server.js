@@ -63,7 +63,7 @@ app.post('/answers', async (req, res) => {
                 response_format: { type: "json_object" }
             });
         }
-        const resposta = await fetch('https://prisma-backend-answers.onrender.com/answers', { /* ... */ });
+        const resposta = await fetch('prisma-backend-answers.onrender.com/answers', { /* ... */ });
 
         if (!resposta.ok) {
      console.error("Erro no servidor HTTP:", resposta.status);
