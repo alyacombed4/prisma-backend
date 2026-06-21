@@ -15,74 +15,51 @@ app.post('/answers', async (req, res) => {
             return res.status(400).json({ error: "Dados da questão ausentes." });
         }
 
-        let completion;
-        
-        // --- TENTATIVA 1: API Principal ---
-        try {
-            const apiKey1 = process.env.GROQ_API_KEY2; // Sua chave principal
-            if (!apiKey1) throw new Error("Chave 1 não configurada");
-
-            const openai = new OpenAI({
-                baseURL: "https://api.groq.com/openai/v1",
-                apiKey: apiKey1,
-            });
-
-            console.log("Tentando API 1...");
-            completion = await openai.chat.completions.create({
-                model: "llama-3.1-8b-instant", // Modelo atualizado e ativo
-                messages: [
-                    { role: "system", content: "Você é um assistente focado em formatação JSON." },
-                    { role: "user", content: `Retorne um JSON baseado em: ${itemDataAnswerless}` }
-                ],
-                temperature: 0.1,
-                response_format: { type: "json_object" }
-            });
-
-        } catch (errorApi1) {
-            console.warn("API 1 falhou ou o modelo foi descontinuado. Erro:", errorApi1.message);
-            
-            // --- TENTATIVA 2: API de Backup (Fallback) ---
-            const apiKey2 = process.env.GROQ_API_KEY; // Sua chave secundária
-            if (!apiKey2) {
-                return res.status(500).json({ error: "API 1 falhou e a API 2 não está configurada." });
-            }
-
-            const openaiBackup = new OpenAI({
-                baseURL: "https://api.groq.com/openai/v1",
-                apiKey: apiKey2,
-            });
-
-            console.log("Tentando API 2 (Backup)...");
-            completion = await openaiBackup.chat.completions.create({
-                model: "llama-3.1-8b-instant", // Um modelo alternativo que esteja ativo
-                messages: [
-                    { role: "system", content: "Você é um assistente focado em formatação JSON." },
-                    { role: "user", content: `Retorne um JSON baseado em: ${itemDataAnswerless}` }
-                ],
-                temperature: 0.1,
-                response_format: { type: "json_object" }
-            });
+        // Obtém a chave principal das variáveis de ambiente
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            console.error("ERRO: GROQ_API_KEY não configurada nas variáveis de ambiente do Render.");
+            return res.status(500).json({ error: "Chave de API não configurada no servidor." });
         }
-        const resposta = await fetch('prisma-backend-answers.onrender.com/answers', { /* ... */ });
 
-        if (!resposta.ok) {
-     console.error("Erro no servidor HTTP:", resposta.status);
-     return;
-}
+        // Inicializa o cliente apontando corretamente para o baseURL da Groq
+        const openai = new OpenAI({
+            baseURL: "https://api.groq.com/openai/v1",
+            apiKey: apiKey,
+        });
 
-        // Processa o resultado da API que funcionou
+        console.log("Enviando requisição para o modelo llama-3.3-70b-versatile...");
+        
+        const completion = await openai.chat.completions.create({
+            model: "llama-3.3-70b-versatile", // Seu novo modelo configurado aqui
+            messages: [
+                {
+                    role: "system",
+                    content: "Você é um assistente focado em análise de dados e formatação estrita em JSON."
+                },
+                {
+                    role: "user",
+                    content: `Analise os dados fornecidos e retorne obrigatoriamente apenas o objeto JSON no formato estruturado: ${itemDataAnswerless}`
+                }
+            ],
+            temperature: 0.1,
+            response_format: { type: "json_object" }
+        });
+
         const responseText = completion.choices[0].message.content.trim();
         const responseData = JSON.parse(responseText);
 
+        // Retorna o JSON processado com sucesso para o seu script do navegador
         res.json(responseData);
 
     } catch (error) {
-        console.error("Erro crítico em ambas as APIs:", error);
-        res.status(500).json({ error: "Erro ao processar a requisição com os provedores de IA." });
+        // Se a chamada à Groq falhar (chave inválida, falta de saldo, etc), cai aqui
+        console.error("Erro no processamento do backend:", error.message);
+        res.status(500).json({ error: "Erro interno ao processar requisição com a IA." });
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor rodando com sucesso na porta ${PORT}`);
+    console.log(`Servidor Prisma rodando com sucesso na porta ${PORT}`);
 });
